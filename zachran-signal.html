@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zachraň signál! – EM vlnění</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a14;
+    --panel: #0d1528;
+    --panel2: #0a1020;
+    --cyan: #00f5ff;
+    --green: #39ff14;
+    --orange: #ff6b00;
+    --red: #ff2244;
+    --purple: #b44fff;
+    --yellow: #ffe600;
+    --text: #c8deff;
+    --dim: #4a6080;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Stars background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 45%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 20% 80%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 65% 85%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(2px 2px at 80% 10%, rgba(0,245,255,0.3) 0%, transparent 100%),
+      radial-gradient(2px 2px at 15% 55%, rgba(180,79,255,0.3) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative; z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    text-align: center;
+    padding: 30px 0 20px;
+  }
+  header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.6rem, 5vw, 2.8rem);
+    font-weight: 900;
+    color: var(--cyan);
+    text-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(0,245,255,0.3);
+    letter-spacing: 2px;
+  }
+  header p {
+    color: var(--dim);
+    font-size: 0.9rem;
+    margin-top: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ===== SCORE BAR ===== */
+  #scorebar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 24px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .score-item {
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .score-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+  .score-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+  #lives-display { color: var(--red); font-size: 1.4rem; }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ===== INTRO SCREEN ===== */
+  #intro-screen {
+    text-align: center;
+  }
+  .big-icon {
+    font-size: 5rem;
+    margin: 20px 0;
+    filter: drop-shadow(0 0 20px var(--cyan));
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .intro-text {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--text);
+    max-width: 600px;
+    margin: 0 auto 30px;
+  }
+  .btn {
+    display: inline-block;
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px 36px;
+    border-radius: 8px;
+    border: 2px solid var(--cyan);
+    background: rgba(0,245,255,0.08);
+    color: var(--cyan);
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    text-shadow: 0 0 8px var(--cyan);
+  }
+  .btn:hover {
+    background: rgba(0,245,255,0.18);
+    box-shadow: 0 0 20px rgba(0,245,255,0.4);
+    transform: translateY(-2px);
+  }
+  .btn.green { border-color: var(--green); color: var(--green); background: rgba(57,255,20,0.07); text-shadow: 0 0 8px var(--green); }
+  .btn.green:hover { background: rgba(57,255,20,0.15); box-shadow: 0 0 20px rgba(57,255,20,0.4); }
+  .btn.orange { border-color: var(--orange); color: var(--orange); background: rgba(255,107,0,0.07); text-shadow: 0 0 8px var(--orange); }
+  .btn.orange:hover { background: rgba(255,107,0,0.15); box-shadow: 0 0 20px rgba(255,107,0,0.4); }
+  .btn.purple { border-color: var(--purple); color: var(--purple); background: rgba(180,79,255,0.07); text-shadow: 0 0 8px var(--purple); }
+  .btn.purple:hover { background: rgba(180,79,255,0.15); box-shadow: 0 0 20px rgba(180,79,255,0.4); }
+
+  /* ===== SPECTRUM SCREEN ===== */
+  #spectrum-screen h2, #quiz-screen h2, #result-screen h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem;
+    color: var(--cyan);
+    margin-bottom: 16px;
+    text-align: center;
+    text-shadow: 0 0 12px var(--cyan);
+  }
+
+  #spectrum-bar {
+    width: 100%;
+    height: 60px;
+    border-radius: 10px;
+    display: flex;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 8px;
+    cursor: pointer;
+    position: relative;
+  }
+  .spec-segment {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: filter 0.2s;
+    position: relative;
+  }
+  .spec-segment:hover { filter: brightness(1.4); }
+  .spec-segment.active { filter: brightness(1.5); outline: 3px solid white; }
+
+  #spec-info {
+    background: var(--panel);
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    min-height: 140px;
+    transition: opacity 0.3s;
+  }
+  #spec-info h3 { font-family: 'Orbitron', monospace; font-size: 1.1rem; margin-bottom: 10px; }
+  #spec-info .spec-props { display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+  #spec-info .prop-tag {
+    background: rgba(0,245,255,0.1);
+    border: 1px solid rgba(0,245,255,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    color: var(--cyan);
+  }
+
+  /* Wave canvas */
+  #wave-canvas {
+    width: 100%;
+    height: 80px;
+    background: var(--panel2);
+    border-radius: 8px;
+    margin: 10px 0;
+    display: block;
+  }
+
+  /* ===== MISSION SELECT ===== */
+  #mission-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .mission-card {
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .mission-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 14px;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .mission-card:hover::before { opacity: 1; }
+  .mission-card:hover { transform: translateY(-3px); }
+  .mission-card.unlocked { border-color: rgba(0,245,255,0.3); }
+  .mission-card.unlocked:hover { box-shadow: 0 8px 30px rgba(0,245,255,0.2); }
+  .mission-card.completed { border-color: var(--green); }
+  .mission-card.completed::after { content: '✓'; position: absolute; top: 12px; right: 14px; color: var(--green); font-size: 1.2rem; font-weight: bold; }
+  .mission-card.locked { opacity: 0.45; cursor: not-allowed; }
+  .mission-icon { font-size: 2.5rem; margin-bottom: 10px; }
+  .mission-name { font-family: 'Orbitron', monospace; font-size: 0.85rem; font-weight: 700; color: var(--cyan); margin-bottom: 4px; }
+  .mission-desc { font-size: 0.78rem; color: var(--dim); line-height: 1.4; }
+  .mission-wave { font-size: 0.7rem; margin-top: 8px; opacity: 0.7; }
+
+  /* ===== QUIZ SCREEN ===== */
+  #quiz-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+  }
+  #quiz-mission-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    color: var(--cyan);
+  }
+  #progress-bar-wrap {
+    background: rgba(255,255,255,0.07);
+    border-radius: 20px;
+    height: 8px;
+    width: 200px;
+  }
+  #progress-bar {
+    height: 8px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    transition: width 0.4s;
+  }
+
+  #question-box {
+    background: var(--panel);
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  #question-num {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--dim);
+    margin-bottom: 10px;
+  }
+  #question-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    font-weight: 600;
+  }
+  #question-img {
+    margin-top: 14px;
+    font-size: 3rem;
+    text-align: center;
+  }
+
+  #answers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .answer-btn {
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    line-height: 1.4;
+  }
+  .answer-btn:hover:not(:disabled) {
+    border-color: var(--cyan);
+    background: rgba(0,245,255,0.07);
+    color: var(--cyan);
+  }
+  .answer-btn.correct {
+    border-color: var(--green);
+    background: rgba(57,255,20,0.12);
+    color: var(--green);
+    box-shadow: 0 0 16px rgba(57,255,20,0.3);
+  }
+  .answer-btn.wrong {
+    border-color: var(--red);
+    background: rgba(255,34,68,0.12);
+    color: var(--red);
+  }
+  .answer-btn:disabled { cursor: default; }
+
+  #feedback-box {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    min-height: 60px;
+    border-left: 4px solid transparent;
+    display: none;
+  }
+  #feedback-box.show { display: block; }
+  #feedback-box.correct-fb { border-color: var(--green); }
+  #feedback-box.wrong-fb { border-color: var(--red); }
+  #feedback-text { font-size: 0.92rem; line-height: 1.5; }
+
+  /* ===== RESULT SCREEN ===== */
+  #result-screen { text-align: center; }
+  #result-icon { font-size: 4rem; margin: 20px 0; }
+  #result-score-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--cyan);
+    text-shadow: 0 0 20px var(--cyan);
+    margin: 10px 0;
+  }
+  #result-msg { font-size: 1rem; color: var(--text); margin-bottom: 30px; line-height: 1.6; }
+  #badge-display {
+    background: var(--panel);
+    border: 1px solid var(--yellow);
+    border-radius: 14px;
+    padding: 18px;
+    display: inline-block;
+    margin-bottom: 30px;
+    min-width: 220px;
+  }
+  #badge-icon { font-size: 2.5rem; }
+  #badge-name { font-family: 'Orbitron', monospace; font-size: 0.9rem; color: var(--yellow); margin-top: 6px; }
+
+  /* ===== FINAL SCREEN ===== */
+  #final-screen { text-align: center; }
+  #final-score {
+    font-family: 'Orbitron', monospace;
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--yellow);
+    text-shadow: 0 0 30px var(--yellow);
+    margin: 20px 0;
+  }
+  #badges-collected {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 16px;
+    margin: 20px 0;
+  }
+  .badge-chip {
+    background: var(--panel);
+    border: 1px solid var(--yellow);
+    border-radius: 12px;
+    padding: 10px 16px;
+    text-align: center;
+  }
+  .badge-chip .bi { font-size: 1.8rem; }
+  .badge-chip .bn { font-size: 0.72rem; color: var(--yellow); font-family: 'Orbitron', monospace; margin-top: 4px; }
+
+  /* ===== SPECTRUM BAR COLORS ===== */
+  .seg-radio { background: linear-gradient(135deg, #1a1a6e, #2d2d9e); }
+  .seg-micro { background: linear-gradient(135deg, #1a3a6e, #1e5e8e); }
+  .seg-ir { background: linear-gradient(135deg, #5e1a00, #9e3300); }
+  .seg-vis { background: linear-gradient(135deg, #7b00ff, #ff0000); }
+  .seg-uv { background: linear-gradient(135deg, #4b0080, #7b00ff); }
+  .seg-xray { background: linear-gradient(135deg, #1a4a1a, #2d7a2d); }
+  .seg-gamma { background: linear-gradient(135deg, #4a0000, #8a0000); }
+
+  canvas#waveCanvas { display: block; }
+
+  @media (max-width: 600px) {
+    #answers { grid-template-columns: 1fr; }
+    #progress-bar-wrap { width: 100px; }
+  }
+
+  /* Animate in */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .screen.active { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>📡 ZACHRAŇ SIGNÁL!</h1>
+    <p>Interaktivní výuka elektromagnetického vlnění · 9. třída ZŠ</p>
+  </header>
+
+  <div id="scorebar">
+    <div class="score-item"><span class="score-label">Body</span><span class="score-value" id="total-score">0</span></div>
+    <div class="score-item"><span class="score-label">Mise</span><span class="score-value" id="mission-progress">0/6</span></div>
+    <div class="score-item"><span class="score-label">Životy</span><span id="lives-display">❤️❤️❤️</span></div>
+    <div class="score-item"><span class="score-label">Odznaky</span><span class="score-value" id="badge-count">0</span></div>
+  </div>
+
+  <!-- INTRO -->
+  <div id="intro-screen" class="screen active">
+    <div class="big-icon">📡</div>
+    <p class="intro-text">
+      Vesmírná základna SIGMA ztratila komunikaci se Zemí! Jako přední technik elektromagnetické komunikace musíš opravit všechna zařízení. Každé z nich využívá jiný druh elektromagnetického vlnění.<br><br>
+      Nejprve si prostuduj <strong>spektrum EM záření</strong>, pak zachraň základnu plněním <strong>6 misí</strong>!
+    </p>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn" onclick="showScreen('spectrum-screen')">🔭 Prozkoumat spektrum</button>
+      <button class="btn green" onclick="showScreen('mission-screen')">🚀 Spustit mise</button>
+    </div>
+  </div>
+
+  <!-- SPECTRUM -->
+  <div id="spectrum-screen" class="screen">
+    <h2>ELEKTROMAGNETICKÉ SPEKTRUM</h2>
+    <p style="text-align:center; color:var(--dim); font-size:0.85rem; margin-bottom:16px;">Klikni na oblast spektra a zjisti více ↓</p>
+    <div id="spectrum-bar">
+      <div class="spec-segment seg-radio" onclick="showSpecInfo('radio')" title="Rádiové vlny">📻<br><span style="writing-mode:vertical-rl;font-size:0.55rem;margin-top:4px">RÁDIO</span></div>
+      <div class="spec-segment seg-micro" onclick="showSpecInfo('micro')" title="Mikrovlny">📡<br><span style="writing-mode:vertical-rl;font-size:0.55rem;margin-top:4px">MIKRO</span></div>
+      <div class="spec-segment seg-ir" onclick="showSpecInfo('ir')" title="Infračervené">🌡️<br><span style="writing-mode:vertical-rl;font-size:0.55rem;margin-top:4px">IR</span></div>
+      <div class="spec-segment seg-vis" onclick="showSpecInfo('vis')" title="Viditelné světlo" style="background:linear-gradient(135deg,#7b00ff,#0000ff,#00ff00,#ffff00,#ff7700,#ff0000)">👁️<br><span style="writing-mode:vertical-rl;font-size:0.55rem;margin-top:4px">VIS</span></div>
+      <div class="spec-segment seg-uv" onclick="showSpecInfo('uv')" title="UV záření">☀️<br><span style="writing-mode:vertical-rl;font-size:0.55rem;margin-top:4px">UV</span></div>
+      <div class="spec-segment seg-xray" onclick="showSpecInfo('xray')" title="Rentgenové">🦴<br><span style="writing-mode:vertical-rl;font-size:0.55rem;margin-top:4px">RTG</span></div>
+      <div class="spec-segment seg-gamma" onclick="showSpecInfo('gamma')" title="Gama záření">☢️<br><span style="writing-mode:vertical-rl;font-size:0.55rem;margin-top:4px">GAMA</span></div>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--dim); margin-bottom:14px; padding:0 4px;">
+      <span>← Delší vlnová délka / Nižší frekvence / Méně energie</span>
+      <span>Kratší vlnová délka / Vyšší frekvence / Více energie →</span>
+    </div>
+
+    <div id="spec-info">
+      <p style="color:var(--dim); text-align:center; padding:20px 0;">Klikni na část spektra výše pro zobrazení informací</p>
+    </div>
+
+    <canvas id="waveCanvas" width="860" height="80"></canvas>
+    <p style="text-align:center; font-size:0.75rem; color:var(--dim); margin-top:6px;">Vizualizace vlny vybrané části spektra</p>
+
+    <div style="text-align:center; margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn" onclick="showScreen('intro-screen')">← Zpět</button>
+      <button class="btn green" onclick="showScreen('mission-screen')">🚀 Na mise →</button>
+    </div>
+  </div>
+
+  <!-- MISSIONS -->
+  <div id="mission-screen" class="screen">
+    <h2>VÝBĚR MISE</h2>
+    <p style="text-align:center; color:var(--dim); font-size:0.85rem; margin-bottom:20px;">Oprav zařízení základny – každé využívá jiný druh EM vlnění</p>
+    <div id="mission-grid"></div>
+    <div style="text-align:center; margin-top:20px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn" onclick="showScreen('intro-screen')">← Zpět</button>
+      <button class="btn purple" onclick="showScreen('spectrum-screen')">🔭 Spektrum</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz-screen" class="screen">
+    <div id="quiz-header">
+      <span id="quiz-mission-title">Mise 1</span>
+      <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    </div>
+    <div id="question-box">
+      <div id="question-num">Otázka 1 / 5</div>
+      <div id="question-text"></div>
+      <div id="question-img"></div>
+    </div>
+    <div id="answers"></div>
+    <div id="feedback-box"><div id="feedback-text"></div></div>
+    <div style="text-align:center;">
+      <button class="btn" id="next-btn" onclick="nextQuestion()" style="display:none;">Další otázka →</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-screen" class="screen">
+    <div id="result-icon">🎉</div>
+    <h2 id="result-title">MISE SPLNĚNA!</h2>
+    <div id="result-score-display">+150 bodů</div>
+    <p id="result-msg"></p>
+    <div id="badge-display">
+      <div id="badge-icon">🏆</div>
+      <div id="badge-name">ODBORNÍK NA RÁDIO</div>
+    </div>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn green" id="next-mission-btn" onclick="showScreen('mission-screen')">🚀 Další mise</button>
+      <button class="btn" onclick="showScreen('spectrum-screen')">🔭 Spektrum</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="gameover-screen" class="screen">
+    <div style="text-align:center; padding:40px 0;">
+      <div style="font-size:4rem; margin-bottom:20px;">💀</div>
+      <h2 style="font-family:'Orbitron',monospace; color:var(--red); font-size:1.8rem; text-shadow:0 0 20px var(--red);">GAME OVER</h2>
+      <p style="margin:20px 0; color:var(--text);">Základna ztratila napájení. Opakuj a nauč se více o EM vlnění!</p>
+      <button class="btn orange" onclick="restartGame()">🔄 Zkusit znovu</button>
+    </div>
+  </div>
+
+  <!-- FINAL -->
+  <div id="final-screen" class="screen">
+    <div style="font-size:4rem; margin:20px 0; animation:pulse 1s ease-in-out infinite;">🏆</div>
+    <h2 style="font-family:'Orbitron',monospace; font-size:1.8rem; color:var(--yellow); text-shadow:0 0 30px var(--yellow);">ZÁKLADNA ZACHRÁNĚNA!</h2>
+    <p style="margin:10px 0; color:var(--text);">Splnil(a) jsi všechny mise a opravil(a) kompletní komunikační systém!</p>
+    <div id="final-score">0 bodů</div>
+    <p style="color:var(--dim); margin-bottom:16px; font-size:0.85rem;">Tvoje odznaky:</p>
+    <div id="badges-collected"></div>
+    <button class="btn green" onclick="restartGame()" style="margin-top:20px;">🔄 Hrát znovu</button>
+  </div>
+</div>
+
+<script>
+// ========================
+//  DATA
+// ========================
+
+const spectrumData = {
+  radio: {
+    name: '📻 Rádiové vlny',
+    color: '#4466ff',
+    waveFreq: 0.5,
+    wavelength: '> 1 mm (až kilometry)',
+    frequency: '< 300 GHz',
+    speed: '300 000 km/s',
+    uses: ['AM/FM rádio', 'Televize', 'Wi-Fi', 'Mobilní sítě', 'GPS'],
+    danger: 'Bezpečné – velmi nízká energie',
+    funFact: 'Nejdelší rádiové vlny mohou být dlouhé jako fotbalové hřiště!'
+  },
+  micro: {
+    name: '📡 Mikrovlny',
+    color: '#44aaff',
+    waveFreq: 1.5,
+    wavelength: '1 mm – 1 m',
+    frequency: '300 MHz – 300 GHz',
+    speed: '300 000 km/s',
+    uses: ['Mikrovlnná trouba', 'Radar', 'Satelitní komunikace', 'Mobilní 5G'],
+    danger: 'Při vysoké intenzitě zahřívají tkáně',
+    funFact: 'Mikrovlnná trouba zahřívá jídlo tím, že rozkmitává molekuly vody!'
+  },
+  ir: {
+    name: '🌡️ Infračervené záření',
+    color: '#ff6600',
+    waveFreq: 3,
+    wavelength: '700 nm – 1 mm',
+    frequency: '300 GHz – 430 THz',
+    speed: '300 000 km/s',
+    uses: ['Dálkové ovládání', 'Noktovizory', 'Tepelné kamery', 'Sušiče v průmyslu'],
+    danger: 'Příliš silné IR může popálit kůži',
+    funFact: 'Hadové druhy jako krajta vidí IR záření a loví v naprosté tmě!'
+  },
+  vis: {
+    name: '👁️ Viditelné světlo',
+    color: '#ffffff',
+    waveFreq: 5,
+    wavelength: '380 – 700 nm',
+    frequency: '430 – 790 THz',
+    speed: '300 000 km/s (ve vakuu)',
+    uses: ['Zrak', 'Fotografie', 'Lasery', 'Optická vlákna'],
+    danger: 'Příliš silný laser může poškodit sítnici',
+    funFact: 'Viditelné světlo tvoří jen malý zlomek celého EM spektra!'
+  },
+  uv: {
+    name: '☀️ Ultrafialové záření',
+    color: '#aa44ff',
+    waveFreq: 8,
+    wavelength: '10 – 380 nm',
+    frequency: '790 THz – 30 PHz',
+    speed: '300 000 km/s',
+    uses: ['Opálování', 'Sterilizace', 'Bankovky (ověření pravosti)', 'Černé světlo'],
+    danger: 'Způsobuje spálení, může vést ke karcinomu kůže',
+    funFact: 'Ozonová vrstva chrání Zemi tím, že absorbuje většinu UV záření ze Slunce!'
+  },
+  xray: {
+    name: '🦴 Rentgenové záření',
+    color: '#44ff88',
+    waveFreq: 14,
+    wavelength: '0,01 – 10 nm',
+    frequency: '30 PHz – 30 EHz',
+    speed: '300 000 km/s',
+    uses: ['Lékařské snímkování', 'Bezpečnostní skenery', 'Kontrola materiálů'],
+    danger: 'Ionizující záření – při nadměrné dávce poškozuje DNA',
+    funFact: 'Rentgen byl objeven Wilhelmem Röntgenem v roce 1895 – dostal za to první Nobelovu cenu za fyziku!'
+  },
+  gamma: {
+    name: '☢️ Gama záření',
+    color: '#ff2244',
+    waveFreq: 20,
+    wavelength: '< 0,01 nm',
+    frequency: '> 30 EHz',
+    speed: '300 000 km/s',
+    uses: ['Onkologická léčba', 'Sterilizace potravin', 'Astronomie (záblesky gama)'],
+    danger: 'Velmi nebezpečné – proniká hmotou, způsobuje nemoc z ozáření',
+    funFact: 'Záblesky gama záření jsou nejenergetičtější jevy ve vesmíru – uvolní více energie než Slunce za celý svůj život!'
+  }
+};
+
+const missions = [
+  {
+    id: 0,
+    name: 'Oprav rádio',
+    icon: '📻',
+    desc: 'Komunikační rádio základny nefunguje. Poznej rádiové vlny!',
+    wave: 'Rádiové vlny',
+    color: '#4466ff',
+    badge: { icon: '📻', name: 'RÁDIOVÝ EXPERT' },
+    questions: [
+      {
+        q: 'Co je společné VŠEM druhům elektromagnetického vlnění?',
+        img: '🌊',
+        answers: ['Šíří se ve vakuu rychlostí světla (~3×10⁸ m/s)', 'Potřebují vzduch k šíření', 'Jsou viditelné lidským okem', 'Mají vždy stejnou frekvenci'],
+        correct: 0,
+        explain: 'Všechny EM vlny se šíří vakuem rychlostí světla (cca 300 000 km/s). Liší se vlnovou délkou a frekvencí.'
+      },
+      {
+        q: 'Které zařízení využívá rádiové vlny?',
+        img: '📻',
+        answers: ['Mikrovlnná trouba', 'FM rádio', 'Rentgen v nemocnici', 'Infračervený teploměr'],
+        correct: 1,
+        explain: 'FM rádio využívá rádiové vlny s frekvencí přibližně 88–108 MHz. Mikrovlnná trouba využívá mikrovlny.'
+      },
+      {
+        q: 'Jak se liší rádiové vlny od gama záření?',
+        img: '📡',
+        answers: ['Rádiové vlny jsou rychlejší', 'Rádiové vlny mají delší vlnovou délku a nižší frekvenci', 'Gama záření je pomalejší', 'Nemají žádný rozdíl'],
+        correct: 1,
+        explain: 'Rádiové vlny mají nejdelší vlnovou délku a nejnižší frekvenci ze všech EM vln. Gama záření má naopak nejkratší vlnovou délku a nejvyšší frekvenci.'
+      },
+      {
+        q: 'Jaký je vztah mezi frekvencí a vlnovou délkou EM vlnění?',
+        img: '〰️',
+        answers: ['Čím vyšší frekvence, tím delší vlnová délka', 'Čím vyšší frekvence, tím kratší vlnová délka', 'Frekvence a vlnová délka spolu nesouvisí', 'Obě hodnoty jsou vždy stejné'],
+        correct: 1,
+        explain: 'Frekvence a vlnová délka jsou nepřímo úměrné: f = c/λ. Čím kratší vlnová délka, tím vyšší frekvence (a energie).'
+      },
+      {
+        q: 'Rádiové vlny mohou procházet zdmi. Proč?',
+        img: '🏠',
+        answers: ['Protože jsou neviditelné', 'Protože mají velkou vlnovou délku a nízkou energii – snadno obcházejí překážky', 'Protože jsou pomalejší než světlo', 'Protože jsou chladné'],
+        correct: 1,
+        explain: 'Dlouhé rádiové vlny se mohou ohýbat (difrakce) kolem překážek a procházet materiály jako jsou zdi, proto rádio v domě funguje i bez přímé viditelnosti na vysílač.'
+      }
+    ]
+  },
+  {
+    id: 1,
+    name: 'Mikrovlnná trouba',
+    icon: '📡',
+    desc: 'Kuchyňský systém základny selhal. Zachraň zásoby jídla!',
+    wave: 'Mikrovlny',
+    color: '#44aaff',
+    badge: { icon: '📡', name: 'MIKROVLNNÝ ŠÉFKUCHAŘ' },
+    questions: [
+      {
+        q: 'Jak ohřívá jídlo mikrovlnná trouba?',
+        img: '🍲',
+        answers: ['Zahřívá vzduch kolem jídla', 'Rozkmitává molekuly vody v jídle pomocí mikrovln', 'Používá infračervené záření', 'Ionizuje atomy jídla'],
+        correct: 1,
+        explain: 'Mikrovlny rozkmitávají polární molekuly (zejména vody) v jídle. Tento pohyb generuje teplo přímo uvnitř jídla – proto se ohřev tak zrychlí.'
+      },
+      {
+        q: 'Mikrovlny jsou v elektromagnetickém spektru:',
+        img: '🔭',
+        answers: ['Mezi rádiovými vlnami a infračerveným zářením', 'Mezi UV a rentgenem', 'Totéž co viditelné světlo', 'Mezi gama a rentgenem'],
+        correct: 0,
+        explain: 'Mikrovlny leží v spektru mezi rádiovými vlnami (delší λ) a infračerveným zářením (kratší λ).'
+      },
+      {
+        q: 'Radar ve vojenství a letectví využívá:',
+        img: '✈️',
+        answers: ['Rádiové vlny', 'Mikrovlny', 'Ultrafialové záření', 'Gama záření'],
+        correct: 1,
+        explain: 'Radar (RAdio Detection And Ranging) využívá mikrovlny. Vysílá pulzy a měří dobu odrazů pro detekci objektů.'
+      },
+      {
+        q: 'Jaká je přibližná vlnová délka mikrovln?',
+        img: '📏',
+        answers: ['0,01 nm – méně', '1 mm – 1 m', '400 – 700 nm', 'Kilometry'],
+        correct: 1,
+        explain: 'Mikrovlny mají vlnovou délku přibližně 1 mm až 1 m, tedy kratší než rádiové vlny, ale delší než infračervené záření.'
+      },
+      {
+        q: 'Technologie 5G mobilních sítí využívá převážně:',
+        img: '📱',
+        answers: ['Gama záření', 'Infračervené záření', 'Mikrovlny (pásmo milimetrových vln)', 'UV záření'],
+        correct: 2,
+        explain: '5G sítě využívají vyšší frekvenční pásma – tzv. milimetrové vlny (mmWave), což jsou krátké mikrovlny. Umožňují přenos velkého množství dat.'
+      }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Tepelné senzory',
+    icon: '🌡️',
+    desc: 'Senzory detekce teploty selhaly. Objev infračervené záření!',
+    wave: 'Infračervené záření',
+    color: '#ff6600',
+    badge: { icon: '🌡️', name: 'TEPELNÝ DETEKTIV' },
+    questions: [
+      {
+        q: 'Všechna tělesa s teplotou nad absolutní nulou vyzařují:',
+        img: '🔥',
+        answers: ['Rentgenové záření', 'Infračervené záření', 'Gama záření', 'Nic'],
+        correct: 1,
+        explain: 'Každé těleso s teplotou vyšší než 0 K (-273 °C) vyzařuje IR záření. Čím teplejší těleso, tím více záření vyzařuje (zákon Stefana-Boltzmanna).'
+      },
+      {
+        q: 'Dálkový ovladač televize vysílá signál pomocí:',
+        img: '📺',
+        answers: ['Rádiových vln', 'Infračerveného záření', 'Viditelného světla', 'Mikrovln'],
+        correct: 1,
+        explain: 'Dálkové ovladače vysílají IR záření (typicky vlnová délka ~940 nm). Proto musí mířit přímo na TV – IR neprojde zdí.'
+      },
+      {
+        q: 'Noktovizory (přístroje pro noční vidění) pracují s:',
+        img: '🌙',
+        answers: ['UV zářením', 'Mikrovlnami', 'Infračerveným zářením z těl živočichů', 'Rentgenovým zářením'],
+        correct: 2,
+        explain: 'Noktovizory zachycují IR záření vyzařované teplými těly (lidé, zvířata). Teplo se zobrazuje jako různé barvy nebo světlé oblasti.'
+      },
+      {
+        q: 'Kam zhruba patří infračervené záření v EM spektru?',
+        img: '🌈',
+        answers: ['Má kratší vlnovou délku než viditelné světlo', 'Má delší vlnovou délku než viditelné světlo, ale kratší než mikrovlny', 'Je totéž co viditelné světlo', 'Má kratší vlnovou délku než UV'],
+        correct: 1,
+        explain: 'IR záření leží hned za červeným koncem viditelného spektra (λ > 700 nm) a sahá až k mikrovlnám (~1 mm).'
+      },
+      {
+        q: 'Jak se nazývá zobrazovací technika využívající IR záření pro měření teploty?',
+        img: '🎯',
+        answers: ['Rentgenografie', 'Termografie', 'Holografie', 'Sonarografie'],
+        correct: 1,
+        explain: 'Termografie (termovize) zachycuje IR záření a převádí ho na teplotní mapu. Používá se ve stavebnictví (tepelné ztráty), lékařství i průmyslu.'
+      }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Solární panely',
+    icon: '☀️',
+    desc: 'Energetický systém selhal. Porozuměj světlu a UV záření!',
+    wave: 'Viditelné světlo & UV záření',
+    color: '#ffee00',
+    badge: { icon: '☀️', name: 'SOLÁRNÍ INŽENÝR' },
+    questions: [
+      {
+        q: 'Jaká je přibližná vlnová délka viditelného světla?',
+        img: '🌈',
+        answers: ['0,01 nm', '380 – 700 nm', '1 mm – 1 m', '> 1 m'],
+        correct: 1,
+        explain: 'Viditelné světlo má vlnovou délku přibližně 380 nm (fialová) až 700 nm (červená). To je jen malá část celého EM spektra!'
+      },
+      {
+        q: 'Fotovoltaické (solární) panely přeměňují světlo na:',
+        img: '⚡',
+        answers: ['Teplo', 'Elektrický proud (fotovoltaický jev)', 'Magnetismus', 'Zvuk'],
+        correct: 1,
+        explain: 'Solární panely využívají fotovoltaický jev – fotony světla vyráží elektrony z polovodičového materiálu (Si), čímž vzniká elektrický proud.'
+      },
+      {
+        q: 'UV záření ze Slunce způsobuje opálení kůže. Proč je nebezpečné?',
+        img: '🧴',
+        answers: ['Je příliš teplé', 'Má dostatečnou energii k poškození DNA v buňkách', 'Je příliš studené', 'Nemá žádný efekt'],
+        correct: 1,
+        explain: 'UV záření (zejm. UV-B a UV-C) má dostatek energie k ionizaci molekul. Může poškodit DNA v kožních buňkách a způsobit karcinom kůže.'
+      },
+      {
+        q: 'Co chrání Zemi před většinou škodlivého UV záření?',
+        img: '🌍',
+        answers: ['Magnetické pole', 'Ozonová vrstva ve stratosféře', 'Oblaka', 'Gravitace'],
+        correct: 1,
+        explain: 'Ozonová vrstva (přibližně 15–35 km nad zemí) absorbuje většinu UV-B a téměř veškeré UV-C záření ze Slunce.'
+      },
+      {
+        q: 'UV záření se využívá ke sterilizaci vody a povrchů. Proč funguje?',
+        img: '🧫',
+        answers: ['Zahřeje vodu na 100 °C', 'Poškodí DNA mikroorganismů, takže se nemnoží', 'Zamrazí bakterie', 'Změní chemické složení vody'],
+        correct: 1,
+        explain: 'UV-C záření (λ ~ 200–280 nm) narušuje DNA bakterií a virů. Proto se UV lampy používají ve vodárnách, operačních sálech i čistírnách vzduchu.'
+      }
+    ]
+  },
+  {
+    id: 4,
+    name: 'Zdravotní centrum',
+    icon: '🦴',
+    desc: 'Lékařská zařízení základny nefungují. Zachraň posádku!',
+    wave: 'Rentgenové záření',
+    color: '#44ff88',
+    badge: { icon: '🦴', name: 'RENTGENOLOG' },
+    questions: [
+      {
+        q: 'Proč je rentgenové záření schopno pronikat lidským tělem?',
+        img: '🩻',
+        answers: ['Je magnetické', 'Má velmi krátkou vlnovou délku a vysokou energii', 'Je studené', 'Má nízkou frekvenci'],
+        correct: 1,
+        explain: 'Rentgenové záření má vlnovou délku 0,01–10 nm a velmi vysokou energii. Měkké tkáně ho propouštějí více než kosti, proto na snímku kosti svítí.'
+      },
+      {
+        q: 'Kdo objevil rentgenové záření a v jakém roce?',
+        img: '🔬',
+        answers: ['Albert Einstein, 1905', 'Wilhelm Röntgen, 1895', 'Marie Curie, 1898', 'Isaac Newton, 1687'],
+        correct: 1,
+        explain: 'Wilhelm Conrad Röntgen objevil rentgenové záření v roce 1895. Za tento objev získal v roce 1901 první Nobelovu cenu za fyziku.'
+      },
+      {
+        q: 'Proč je rentgenové záření nebezpečné ve velkých dávkách?',
+        img: '⚠️',
+        answers: ['Je příliš hlasité', 'Je ionizující – může poškodit buňky a DNA, zvyšuje riziko nádorů', 'Příliš zahřívá tělo', 'Je příliš studené'],
+        correct: 1,
+        explain: 'Rentgenové záření je ionizující – ionizuje atomy v buňkách. Při vysokých dávkách poškozuje DNA, což může vést ke vzniku nádorů. Proto lékaři minimalizují počet RTG snímků.'
+      },
+      {
+        q: 'CT (počítačová tomografie) je vylepšená forma rentgenového snímkování. Co přidává oproti klasickému RTG?',
+        img: '🖥️',
+        answers: ['Barevné snímky', '3D zobrazení orgánů z mnoha úhlů', 'Využívá UV místo RTG', 'Léčí nemoci'],
+        correct: 1,
+        explain: 'CT (Computed Tomography) snímá rentgenové záření z mnoha úhlů a počítač sestaví 3D obraz. Lze tak detailně vidět orgány, nádory, cévy.'
+      },
+      {
+        q: 'Rentgenové záření se používá i v letištních bezpečnostních skenerech. Co zkoumají?',
+        img: '✈️',
+        answers: ['Teplotu cestujících', 'Obsah zavazadel bez otevírání', 'Rychlost letadel', 'Počet cestujících'],
+        correct: 1,
+        explain: 'Letištní skenery prochází rentgenem přes zavazadla. Různé materiály (kov, plast, organika) absorbují záření různě – obsluha vidí obsah na obrazovce.'
+      }
+    ]
+  },
+  {
+    id: 5,
+    name: 'Astronomický modul',
+    icon: '☢️',
+    desc: 'Detektory záření z vesmíru jsou nefunkční. Finální mise!',
+    wave: 'Gama záření',
+    color: '#ff2244',
+    badge: { icon: '☢️', name: 'ASTROFYZIK' },
+    questions: [
+      {
+        q: 'Gama záření má ze všech EM vln:',
+        img: '🚀',
+        answers: ['Nejdelší vlnovou délku a nejnižší energii', 'Nejkratší vlnovou délku a nejvyšší energii', 'Střední vlnovou délku', 'Stejnou energii jako světlo'],
+        correct: 1,
+        explain: 'Gama záření (λ < 0,01 nm) leží na opačném konci spektra než rádiové vlny. Má nejvyšší frekvenci a nejvyšší energii ze všech EM vln.'
+      },
+      {
+        q: 'Záblesky gama záření (GRB – gamma-ray bursts) jsou kosmické události. Co je charakterizuje?',
+        img: '💥',
+        answers: ['Jsou nejslabšími jevy ve vesmíru', 'Jsou nejenergetičtějšími explozemi od Velkého třesku', 'Jsou způsobeny Sluncem', 'Docházejí každý den poblíž Země'],
+        correct: 1,
+        explain: 'Záblesky gama záření jsou nejenergetičtější jevy ve vesmíru. Vznikají při kolizi neutronových hvězd nebo kollapsu masivních hvězd (hypernovy). Jeden záblesk uvolní více energie než Slunce za celý život.'
+      },
+      {
+        q: 'V medicíně se gama záření využívá ke:',
+        img: '🏥',
+        answers: ['Barvení kůže', 'Cílené likvidaci nádorů (radioterapie, gama nůž)', 'Ohřevu jídla', 'Přenosu dat'],
+        correct: 1,
+        explain: 'Radioterapie využívá gama záření k destrukci nádorových buněk. Gama nůž (stereotaktická radiochirurgie) zaměřuje paprsky z mnoha úhlů na přesné místo v mozku.'
+      },
+      {
+        q: 'Co vytváří gama záření v přírodě na Zemi?',
+        img: '⚛️',
+        answers: ['Bouřky a déšť', 'Radioaktivní rozpad nestabilních atomových jader', 'Sopečná činnost', 'Zemětřesení'],
+        correct: 1,
+        explain: 'Gama záření vzniká při radioaktivním rozpadu nestabilních jader (gama rozpad), při jaderných reakcích a také při anihilaci elektronu a pozitronu.'
+      },
+      {
+        q: 'Jaký materiál nejlépe stíní gama záření?',
+        img: '🛡️',
+        answers: ['Papír', 'Sklo', 'Voda', 'Olovo a beton (husté materiály)'],
+        correct: 3,
+        explain: 'Gama záření proniká i kovy. Efektivně ho stíní pouze husté materiály jako olovo nebo silné betonové stěny. Proto jsou jaderné elektrárny opancéřovány betonovým krunýřem.'
+      }
+    ]
+  }
+];
+
+// ========================
+//  STATE
+// ========================
+let state = {
+  score: 0,
+  lives: 3,
+  completedMissions: [],
+  currentMission: null,
+  currentQ: 0,
+  missionScore: 0,
+  badges: []
+};
+
+// ========================
+//  SCREEN MANAGEMENT
+// ========================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'mission-screen') renderMissions();
+}
+
+// ========================
+//  SCOREBAR
+// ========================
+function updateScorebar() {
+  document.getElementById('total-score').textContent = state.score;
+  document.getElementById('mission-progress').textContent = `${state.completedMissions.length}/6`;
+  document.getElementById('badge-count').textContent = state.badges.length;
+  const hearts = '❤️'.repeat(state.lives) + '🖤'.repeat(Math.max(0, 3 - state.lives));
+  document.getElementById('lives-display').textContent = hearts;
+}
+
+// ========================
+//  SPECTRUM
+// ========================
+function showSpecInfo(type) {
+  const d = spectrumData[type];
+  document.querySelectorAll('.spec-segment').forEach(s => s.classList.remove('active'));
+  event.target.closest('.spec-segment').classList.add('active');
+
+  const box = document.getElementById('spec-info');
+  box.innerHTML = `
+    <h3 style="color:${d.color}; text-shadow:0 0 12px ${d.color}">${d.name}</h3>
+    <div class="spec-props">
+      <span class="prop-tag">λ: ${d.wavelength}</span>
+      <span class="prop-tag">f: ${d.frequency}</span>
+      <span class="prop-tag">v = ${d.speed}</span>
+    </div>
+    <p style="font-size:0.88rem; margin:8px 0;"><strong style="color:${d.color}">Využití:</strong> ${d.uses.join(', ')}</p>
+    <p style="font-size:0.88rem; margin:6px 0;"><strong style="color:#ff6600">Bezpečnost:</strong> ${d.danger}</p>
+    <p style="font-size:0.85rem; margin-top:10px; color:#aabbcc; font-style:italic;">💡 ${d.funFact}</p>
+  `;
+
+  drawWave(d.waveFreq, d.color);
+}
+
+function drawWave(freq, color) {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  for (let x = 0; x <= W; x++) {
+    const y = H/2 + Math.sin((x / W) * Math.PI * 2 * freq) * (H/2 - 10);
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+// ========================
+//  MISSIONS
+// ========================
+function renderMissions() {
+  const grid = document.getElementById('mission-grid');
+  grid.innerHTML = '';
+  missions.forEach((m, i) => {
+    const completed = state.completedMissions.includes(m.id);
+    const locked = i > 0 && !state.completedMissions.includes(missions[i-1].id);
+    const card = document.createElement('div');
+    card.className = `mission-card ${completed ? 'completed' : locked ? 'locked' : 'unlocked'}`;
+    card.innerHTML = `
+      <div class="mission-icon">${m.icon}</div>
+      <div class="mission-name">${m.name}</div>
+      <div class="mission-desc">${m.desc}</div>
+      <div class="mission-wave" style="color:${m.color}">〰 ${m.wave}</div>
+    `;
+    if (!locked && !completed) {
+      card.onclick = () => startMission(m.id);
+    } else if (completed) {
+      card.style.borderColor = 'var(--green)';
+    }
+    grid.appendChild(card);
+  });
+}
+
+// ========================
+//  QUIZ
+// ========================
+function startMission(id) {
+  state.currentMission = id;
+  state.currentQ = 0;
+  state.missionScore = 0;
+  const m = missions[id];
+  document.getElementById('quiz-mission-title').textContent = `${m.icon} ${m.name}`;
+  showScreen('quiz-screen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const m = missions[state.currentMission];
+  const q = m.questions[state.currentQ];
+  const total = m.questions.length;
+
+  document.getElementById('question-num').textContent = `Otázka ${state.currentQ + 1} / ${total}`;
+  document.getElementById('question-text').textContent = q.q;
+  document.getElementById('question-img').textContent = q.img || '';
+  document.getElementById('progress-bar').style.width = `${(state.currentQ / total) * 100}%`;
+
+  const aDiv = document.getElementById('answers');
+  aDiv.innerHTML = '';
+  q.answers.forEach((ans, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = ans;
+    btn.onclick = () => selectAnswer(i);
+    aDiv.appendChild(btn);
+  });
+
+  document.getElementById('feedback-box').className = 'feedback-box';
+  document.getElementById('feedback-box').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+}
+
+function selectAnswer(idx) {
+  const m = missions[state.currentMission];
+  const q = m.questions[state.currentQ];
+  const btns = document.querySelectorAll('.answer-btn');
+
+  btns.forEach(b => b.disabled = true);
+  btns[q.correct].classList.add('correct');
+
+  const fb = document.getElementById('feedback-box');
+  const ft = document.getElementById('feedback-text');
+
+  if (idx === q.correct) {
+    state.score += 20;
+    state.missionScore += 20;
+    fb.className = 'feedback-box show correct-fb';
+    ft.innerHTML = `✅ <strong>Správně!</strong> ${q.explain}`;
+    btns[idx].style.boxShadow = '0 0 20px rgba(57,255,20,0.5)';
+  } else {
+    btns[idx].classList.add('wrong');
+    state.lives = Math.max(0, state.lives - 1);
+    fb.className = 'feedback-box show wrong-fb';
+    ft.innerHTML = `❌ <strong>Špatně.</strong> ${q.explain}`;
+  }
+
+  fb.style.display = 'block';
+  updateScorebar();
+
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.style.display = 'inline-block';
+  const isLast = state.currentQ === m.questions.length - 1;
+  nextBtn.textContent = isLast ? 'Dokončit misi 🏁' : 'Další otázka →';
+}
+
+function nextQuestion() {
+  const m = missions[state.currentMission];
+  state.currentQ++;
+
+  if (state.lives <= 0) {
+    showScreen('gameover-screen');
+    return;
+  }
+
+  if (state.currentQ >= m.questions.length) {
+    completeMission();
+    return;
+  }
+
+  renderQuestion();
+}
+
+function completeMission() {
+  const m = missions[state.currentMission];
+  state.completedMissions.push(m.id);
+  state.badges.push(m.badge);
+  state.score += 50; // bonus
+
+  document.getElementById('result-title').textContent = 'MISE SPLNĚNA!';
+  document.getElementById('result-icon').textContent = '🎉';
+  document.getElementById('result-score-display').textContent = `+${state.missionScore + 50} bodů`;
+  document.getElementById('result-msg').innerHTML = `
+    Výborně! Opravil(a) jsi <strong>${m.name}</strong>.<br>
+    Dozvěděl(a) ses vše o: <span style="color:${m.color}">${m.wave}</span>.<br>
+    Celkové skóre: <strong>${state.score}</strong> bodů.
+  `;
+  document.getElementById('badge-icon').textContent = m.badge.icon;
+  document.getElementById('badge-name').textContent = m.badge.name;
+
+  updateScorebar();
+
+  // Check if all done
+  if (state.completedMissions.length === missions.length) {
+    document.getElementById('next-mission-btn').textContent = '🏆 Zobrazit výsledky';
+    document.getElementById('next-mission-btn').onclick = showFinal;
+  }
+
+  showScreen('result-screen');
+}
+
+function showFinal() {
+  document.getElementById('final-score').textContent = `${state.score} bodů`;
+  const bc = document.getElementById('badges-collected');
+  bc.innerHTML = '';
+  state.badges.forEach(b => {
+    const chip = document.createElement('div');
+    chip.className = 'badge-chip';
+    chip.innerHTML = `<div class="bi">${b.icon}</div><div class="bn">${b.name}</div>`;
+    bc.appendChild(chip);
+  });
+  showScreen('final-screen');
+}
+
+function restartGame() {
+  state = { score: 0, lives: 3, completedMissions: [], currentMission: null, currentQ: 0, missionScore: 0, badges: [] };
+  updateScorebar();
+  showScreen('intro-screen');
+}
+
+// Init
+updateScorebar();
+</script>
+</body>
+</html>
