@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vlnová optika — opakování | 9. třída</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 20px;
+    line-height: 1.6;
+    background: #f5f7fa;
+    color: #1a1a2e;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: #1a3a5c;
+    color: #fff;
+    padding: 28px 48px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  header p {
+    font-size: 16px;
+    opacity: 0.75;
+    margin-top: 4px;
+  }
+
+  /* ── TOGGLE BUTTON ── */
+  #toggleBtn {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 14px 32px;
+    border: 3px solid #fff;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  #toggleBtn:hover {
+    background: #fff;
+    color: #1a3a5c;
+  }
+
+  /* mode indicator pill */
+  #modeLabel {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-top: 8px;
+    background: #e8f4fd;
+    color: #1a3a5c;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 0 32px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #d0dde8;
+    overflow: hidden;
+  }
+
+  .section-header {
+    background: #1a3a5c;
+    color: #fff;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-number {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .section-icon {
+    font-size: 28px;
+    margin-right: 4px;
+  }
+
+  .section-body {
+    padding: 28px 32px 32px;
+  }
+
+  /* ── QUESTION LIST ── */
+  ol.questions {
+    list-style: none;
+    counter-reset: q-counter var(--start, 0);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  ol.questions li {
+    counter-increment: q-counter;
+    border-bottom: 1px solid #e8eef4;
+  }
+
+  ol.questions li:last-child {
+    border-bottom: none;
+  }
+
+  .question-row {
+    padding: 18px 0 4px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .q-num {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a3a5c;
+    min-width: 36px;
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
+
+  .q-text {
+    font-size: 21px;
+    line-height: 1.5;
+    color: #1a1a2e;
+    padding-top: 2px;
+  }
+
+  /* ── ANSWER ── */
+  .answer-block {
+    display: none;
+    margin: 2px 0 16px 50px;
+    background: #eaf4fb;
+    border-left: 5px solid #1a7abf;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 20px;
+    font-size: 18px;
+    color: #0d2c45;
+    line-height: 1.6;
+  }
+
+  .answer-block .answer-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #1a7abf;
+    margin-bottom: 6px;
+  }
+
+  body.show-answers .answer-block {
+    display: block;
+  }
+
+  /* ── IMAGE CONTAINER ── */
+  .img-container {
+    display: none;
+    margin-top: 28px;
+    text-align: center;
+    border-top: 1px solid #e8eef4;
+    padding-top: 24px;
+  }
+
+  body.show-answers .img-container {
+    display: block;
+  }
+
+  .img-container img {
+    width: 80%;
+    max-width: 100%;
+    border-radius: 8px;
+    border: 1px solid #d0dde8;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .img-placeholder {
+    width: 80%;
+    margin: 0 auto;
+    height: 220px;
+    background: #f0f5fa;
+    border: 2px dashed #b0c4d8;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7a9ab8;
+    font-size: 16px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    font-size: 14px;
+    color: #8a9ab0;
+    padding: 20px;
+  }
+
+  @media (max-width: 640px) {
+    body { font-size: 17px; }
+    main { padding: 0 14px 40px; }
+    header { padding: 20px 20px 16px; }
+    .section-body { padding: 20px 18px 24px; }
+    .q-text { font-size: 18px; }
+    .answer-block { font-size: 16px; }
+    .img-container img, .img-placeholder { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Vlnová optika — opakování</h1>
+    <p>Fyzika · 9. třída</p>
+    <span id="modeLabel">Režim: Otázky</span>
+  </div>
+  <button id="toggleBtn" onclick="toggleMode()">Otázky / Odpovědi</button>
+</header>
+
+<main>
+
+  <!-- ══════════════════════════════════════
+       SEKCE 1 — DISPERZE
+  ══════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-icon">🌈</span>
+      <div>
+        <div class="section-number">Sekce 1</div>
+        <div class="section-title">Disperze</div>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <ol class="questions" style="--start: 0">
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">1.</span>
+            <span class="q-text">Co se stane s bílým světlem, když projde skleněným hranolem?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Bílé světlo se rozloží na barevné spektrum — od červené po fialovou. Každá barva má jinou vlnovou délku, proto se každá láme pod trochu jiným úhlem. Tomuto jevu říkáme <strong>disperze</strong>.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">2.</span>
+            <span class="q-text">Která barva se láme nejvíce a která nejméně?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            <strong>Fialová</strong> se láme nejvíce (nejkratší vlnová délka, ~400 nm). <strong>Červená</strong> se láme nejméně (nejdelší vlnová délka, ~700 nm). Čím kratší vlnová délka, tím větší lom.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">3.</span>
+            <span class="q-text">Kde v přírodě vidíme disperzi světla?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Nejznámějším příkladem je <strong>duha</strong> — kapičky deště fungují jako malé hranoly. Disperzi vidíme také na broušených sklech, diamantech, olejové skvrně na vodě nebo na CD/DVD discích.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">4.</span>
+            <span class="q-text">Proč má duha vždy stejné pořadí barev?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Protože pořadí je dáno fyzikálními vlastnostmi světla — každá barva má pevně danou vlnovou délku, a tedy pevně daný úhel lomu. Červená je vždy nahoře, fialová dole. Tento zákon přírody se nemění.
+          </div>
+        </li>
+
+      </ol>
+
+      <!-- Obrázek disperze -->
+      <div class="img-container">
+        <img src="images/obr_disperze.png" alt="Schéma disperze světla na hranolu"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="img-placeholder" style="display:none;">
+          Sem vložte soubor <strong>images/obr_disperze.png</strong>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════
+       SEKCE 2 — DIFRAKCE
+  ══════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-icon">〰️</span>
+      <div>
+        <div class="section-number">Sekce 2</div>
+        <div class="section-title">Difrakce</div>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <ol class="questions" style="--start: 4">
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">5.</span>
+            <span class="q-text">Co znamená, že se vlny „ohýbají"?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Vlny se nešíří jen přímo, ale po průchodu štěrbinou nebo kolem překážky se rozšiřují i do stran — do oblastí, kam by přímočaré šíření nedosáhlo. Tento jev se nazývá <strong>difrakce</strong> (ohyb vlnění).
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">6.</span>
+            <span class="q-text">Proč slyšíme zvuk za rohem, ale světlo za roh nevidíme?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Ohyb je tím větší, čím je vlnová délka blíže velikosti překážky. Zvukové vlny mají vlnovou délku v řádu decimetrů až metrů — snadno se ohýbají kolem rohů budov. Světelné vlny jsou tisíckrát kratší (stovky nm), proto se ohýbají jen nepatrně.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">7.</span>
+            <span class="q-text">Co se stane s vlnami, když projdou úzkou štěrbinou? Nakresli nebo popiš.</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Za štěrbinou se z každého bodu šíří nové vlny do všech stran (jako půlkruhové vlnoplochy). Na stínítku pak vidíme střídání světlých a tmavých proužků — <strong>difrakční vzor</strong>. Uprostřed je nejsvětlejší proužek.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">8.</span>
+            <span class="q-text">Kdy se vlny ohýbají více — když je štěrbina větší nebo menší než vlnová délka?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Vlny se ohýbají více, když je štěrbina <strong>menší</strong> — srovnatelná nebo menší než vlnová délka. Velká štěrbina způsobuje jen malý ohyb a vlny prochází téměř přímočaře.
+          </div>
+        </li>
+
+      </ol>
+
+      <!-- Obrázek difrakce -->
+      <div class="img-container">
+        <img src="images/obr_difrakce.png" alt="Schéma difrakce světla na štěrbině"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="img-placeholder" style="display:none;">
+          Sem vložte soubor <strong>images/obr_difrakce.png</strong>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════
+       SEKCE 3 — INTERFERENCE
+  ══════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-icon">🔁</span>
+      <div>
+        <div class="section-number">Sekce 3</div>
+        <div class="section-title">Interference</div>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <ol class="questions" style="--start: 8">
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">9.</span>
+            <span class="q-text">Co vznikne, když se setkají dvě vlny ve stejné fázi?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Vznikne vlna s <strong>větší amplitudou</strong> (hřebeny se sčítají, dolíky se sčítají). Tomuto jevu říkáme <strong>konstruktivní interference</strong> — vlny se zesilují.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">10.</span>
+            <span class="q-text">Co vznikne, když se setkají dvě vlny v protifázi?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Vlny se navzájem ruší — hřeben jedné vlny padá do dolíku druhé. Výsledkem je vlna s nulovou (nebo menší) amplitudou. Tomuto jevu říkáme <strong>destruktivní interference</strong>.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">11.</span>
+            <span class="q-text">Proč mýdlová bublina září různými barvami?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Světlo se odráží od přední i zadní stěny tenkého mýdlového filmu. Tyto dva paprsky spolu interferují — některé barvy se zesilují (konstruktivní interference), jiné ruší. Výsledná barva závisí na tloušťce filmu.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">12.</span>
+            <span class="q-text">Jak fungují sluchátka s „noise cancelling"?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Mikrofon zachytí okolní hluk a elektronika okamžitě vytvoří zvukovou vlnu <strong>v protifázi</strong>. Tato vlna se přidá k hluku — výsledkem je destruktivní interference a hluk se potlačí nebo zcela vyruší.
+          </div>
+        </li>
+
+      </ol>
+
+      <!-- Obrázek interference -->
+      <div class="img-container">
+        <img src="images/obr_interference.png" alt="Schéma interference vln"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="img-placeholder" style="display:none;">
+          Sem vložte soubor <strong>images/obr_interference.png</strong>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════
+       SEKCE 4 — POLARIZACE
+  ══════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-icon">🔲</span>
+      <div>
+        <div class="section-number">Sekce 4</div>
+        <div class="section-title">Polarizace</div>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <ol class="questions" style="--start: 12">
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">13.</span>
+            <span class="q-text">Co znamená, že světlo je „nepolarizované"?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Světlo je příčná vlna — kmitá kolmo na směr šíření. Nepolarizované světlo kmitá <strong>ve všech směrech najednou</strong> (vodorovně, svisle i šikmo). Žárovka nebo slunce vyzařují nepolarizované světlo.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">14.</span>
+            <span class="q-text">Co dělá polarizátor se světlem?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Polarizátor propustí pouze vlny kmitající v <strong>jednom konkrétním směru</strong> — ostatní pohltí. Za polarizátorem světlo kmitá jen rovině — říkáme mu <strong>lineárně polarizované</strong>. Intenzita světla poklesne přibližně na polovinu.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">15.</span>
+            <span class="q-text">Proč polarizační brýle pomáhají při řízení nebo rybaření?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Světlo odražené od vodorovných povrchů (vozovka, vodní hladina) je přirozeně <strong>vodorovně polarizované</strong>. Polarizační brýle mají svislý polarizátor, který toto odražené světlo pohltí — odlesky zmizí a viditelnost se výrazně zlepší.
+          </div>
+        </li>
+
+        <li>
+          <div class="question-row">
+            <span class="q-num">16.</span>
+            <span class="q-text">Co se stane, když dáme za sebou dva zkřížené polarizátory?</span>
+          </div>
+          <div class="answer-block">
+            <div class="answer-label">Odpověď</div>
+            Světlo neprojde vůbec — výsledkem je <strong>úplná tma</strong>. První polarizátor propustí jen svisle kmitající světlo. Druhý polarizátor (otočený o 90°) propouští jen vodorovné kmitání — svislé kmitání zastaví úplně.
+          </div>
+        </li>
+
+      </ol>
+
+      <!-- Obrázek polarizace -->
+      <div class="img-container">
+        <img src="images/obr_polarizace.png" alt="Schéma polarizace světla"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="img-placeholder" style="display:none;">
+          Sem vložte soubor <strong>images/obr_polarizace.png</strong>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Fyzika · 9. třída · Vlnová optika — disperze, difrakce, interference, polarizace
+</footer>
+
+<script>
+  var answersVisible = false;
+
+  function toggleMode() {
+    answersVisible = !answersVisible;
+    if (answersVisible) {
+      document.body.classList.add('show-answers');
+      document.getElementById('modeLabel').textContent = 'Režim: Odpovědi';
+    } else {
+      document.body.classList.remove('show-answers');
+      document.getElementById('modeLabel').textContent = 'Režim: Otázky';
+    }
+  }
+</script>
+
+</body>
+</html>
